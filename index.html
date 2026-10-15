@@ -1,0 +1,1202 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Ticketing System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f4f6f8;
+            color: #333;
+        }
+
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        header h2 {
+            margin: 0;
+        }
+
+        .role-selector {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+
+        .btn-admin {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-org {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-cust {
+            background: #10b981;
+            color: white;
+        }
+
+        .dashboard {
+            display: none;
+            background: white;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .active {
+            display: block;
+        }
+
+        h3 {
+            color: #1e293b;
+        }
+
+        h4 {
+            margin-top: 25px;
+            color: #334155;
+        }
+
+        .section-description {
+            color: #64748b;
+        }
+
+        hr {
+            margin: 30px 0;
+            border: 0;
+            border-top: 1px solid #ddd;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #f1f5f9;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        form {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        form input,
+        form select {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1 1 180px;
+            min-width: 0;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .edit-btn {
+            background: #f59e0b;
+            color: white;
+            margin: 2px;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+            margin: 2px;
+        }
+
+        .cancel-btn {
+            background: #64748b;
+            color: white;
+        }
+
+        .alert {
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .dashboard {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>Ticketing Portal</h2>
+
+    <div class="role-selector">
+        <span>Switch Role:</span>
+
+        <button class="btn-admin" onclick="switchRole('admin')">
+            Administrator
+        </button>
+
+        <button class="btn-org" onclick="switchRole('organiser')">
+            Organiser / Staff
+        </button>
+
+        <button class="btn-cust" onclick="switchRole('customer')">
+            Customer
+        </button>
+    </div>
+</header>
+
+<div id="alert-box" class="alert" role="status" aria-live="polite"></div>
+
+
+<!-- ================================================= -->
+<!-- 1. ADMINISTRATOR DASHBOARD                         -->
+<!-- ================================================= -->
+
+<section id="admin" class="dashboard active">
+
+    <h3>Administrator Dashboard</h3>
+    <p>Manage system users and event venues.</p>
+
+    <!-- USER MANAGEMENT -->
+
+    <h4>User Management</h4>
+
+    <button type="button" class="primary-btn" onclick="fetchUsers()">
+        Refresh Users List
+    </button>
+
+    <div class="table-container">
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <h4>Create New User</h4>
+
+    <form id="create-user-form" onsubmit="handleCreateUser(event)">
+        <input type="text" id="user-name" placeholder="Full Name" required>
+        <input type="email" id="user-email" placeholder="Email" required>
+        <input type="password" id="user-password" placeholder="Password" required>
+
+        <select id="user-role" required>
+            <option value="Customer">Customer</option>
+            <option value="Organiser">Organiser</option>
+            <option value="Administrator">Administrator</option>
+        </select>
+
+        <button type="submit" class="primary-btn">Add User</button>
+    </form>
+
+
+    <!-- VENUE MANAGEMENT -->
+
+    <hr>
+
+    <h4>Venue Management</h4>
+    <p class="section-description">
+        Add, view, edit, update, and delete event venues.
+    </p>
+
+    <button type="button" class="primary-btn" onclick="fetchVenues()">
+        Refresh Venue List
+    </button>
+
+    <div class="table-container">
+        <table id="venues-table">
+            <thead>
+                <tr>
+                    <th>Venue ID</th>
+                    <th>Venue Name</th>
+                    <th>Location</th>
+                    <th>Capacity</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <h4 id="venue-form-title">Add New Venue</h4>
+
+    <form id="create-venue-form" onsubmit="handleCreateVenue(event)">
+        <input type="hidden" id="venue-id">
+
+        <input type="text" id="venue-name" placeholder="Venue Name" required>
+        <input type="text" id="venue-location" placeholder="Venue Location" required>
+
+        <input
+            type="number"
+            id="venue-capacity"
+            placeholder="Venue Capacity"
+            min="1"
+            step="1"
+            required
+        >
+
+        <button type="submit" id="venue-submit-btn" class="primary-btn">
+            Add Venue
+        </button>
+
+        <button
+            type="button"
+            id="venue-cancel-btn"
+            class="cancel-btn"
+            onclick="cancelVenueEdit()"
+            style="display: none;"
+        >
+            Cancel Edit
+        </button>
+    </form>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- 2. ORGANISER / STAFF DASHBOARD                    -->
+<!-- ================================================= -->
+
+<section id="organiser" class="dashboard">
+
+    <h3>Organiser / Staff Dashboard</h3>
+
+    <p class="section-description">
+        Create and manage events, schedules, and ticket allocations.
+    </p>
+
+    <h4 id="event-form-title">Create Event</h4>
+
+    <form id="create-event-form" onsubmit="handleCreateEvent(event)">
+
+        <input type="hidden" id="event-id">
+
+        <input
+            type="text"
+            id="event-title"
+            placeholder="Event Title"
+            required
+        >
+
+        <input
+            type="datetime-local"
+            id="event-date"
+            required
+        >
+
+        <input
+            type="number"
+            id="event-venue"
+            placeholder="Venue ID"
+            min="1"
+            required
+        >
+
+        <input
+            type="number"
+            id="event-org"
+            placeholder="Organiser User ID"
+            min="1"
+            required
+        >
+
+        <input
+            type="number"
+            step="0.01"
+            min="0"
+            id="event-price"
+            placeholder="Ticket Price (MYR)"
+            required
+        >
+
+        <input
+            type="number"
+            id="event-tickets"
+            placeholder="Available Tickets"
+            min="0"
+            step="1"
+            required
+        >
+
+        <button type="submit" id="event-submit-btn" class="primary-btn">
+            Create Event
+        </button>
+
+        <button
+            type="button"
+            id="event-cancel-btn"
+            class="cancel-btn"
+            onclick="cancelEventEdit()"
+            style="display: none;"
+        >
+            Cancel Edit
+        </button>
+    </form>
+
+
+    <h4>Managed Events</h4>
+
+    <button
+        type="button"
+        class="primary-btn"
+        onclick="fetchEvents('organiser')"
+    >
+        Refresh Events List
+    </button>
+
+    <div class="table-container">
+        <table id="org-events-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Price</th>
+                    <th>Available Tickets</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- 3. CUSTOMER DASHBOARD                             -->
+<!-- ================================================= -->
+
+<section id="customer" class="dashboard">
+
+    <h3>Customer Dashboard</h3>
+
+    <p class="section-description">
+        Browse available events, view venue information, book tickets,
+        and check your bookings.
+    </p>
+
+    <h4>Browse Events</h4>
+
+    <button
+        type="button"
+        class="primary-btn"
+        onclick="fetchEvents('customer')"
+    >
+        Load Available Events
+    </button>
+
+    <div class="table-container">
+        <table id="cust-events-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Venue</th>
+                    <th>Location</th>
+                    <th>Price</th>
+                    <th>Available Tickets</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+
+    <h4>My Bookings</h4>
+
+    <button type="button" class="primary-btn" onclick="fetchBookings()">
+        Load My Bookings
+    </button>
+
+    <div class="table-container">
+        <table id="cust-bookings-table">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Event Title</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+</section>
+
+
+<script>
+
+// ==================================================
+// API CONFIGURATION
+// ==================================================
+
+const API_BASE = "http://localhost/ticketing-api/api";
+
+
+// ==================================================
+// SHARED FUNCTIONS
+// ==================================================
+
+function showAlert(message, isError = false) {
+    const box = document.getElementById("alert-box");
+
+    box.className = isError
+        ? "alert alert-error"
+        : "alert alert-success";
+
+    box.textContent = message;
+    box.style.display = "block";
+}
+
+
+async function getJSON(url, options = {}) {
+    const response = await fetch(url, options);
+    const result = await response.json();
+
+    return { response, result };
+}
+
+
+function switchRole(role) {
+    document.querySelectorAll(".dashboard").forEach(dashboard => {
+        dashboard.classList.remove("active");
+    });
+
+    document.getElementById(role).classList.add("active");
+
+    if (role === "admin") {
+        fetchUsers();
+        fetchVenues();
+    }
+
+    if (role === "organiser") {
+        fetchEvents("organiser");
+    }
+
+    if (role === "customer") {
+        fetchEvents("customer");
+        fetchBookings();
+    }
+}
+
+
+// ==================================================
+// ADMINISTRATOR: USER MANAGEMENT
+// ==================================================
+
+async function fetchUsers() {
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/users.php`
+        );
+
+        if (!response.ok) {
+            showAlert(result.message || "Failed to fetch users.", true);
+            return;
+        }
+
+        const tbody = document.querySelector("#users-table tbody");
+        tbody.innerHTML = "";
+
+        const users = Array.isArray(result.data)
+            ? result.data
+            : result.data ? [result.data] : [];
+
+        users.forEach(user => {
+            const row = document.createElement("tr");
+
+            [
+                user.user_id,
+                user.name,
+                user.email,
+                user.role
+            ].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "";
+                row.appendChild(cell);
+            });
+
+            const actionCell = document.createElement("td");
+            const deleteButton = document.createElement("button");
+
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "delete-btn";
+            deleteButton.onclick = () => deleteUser(user.user_id);
+
+            actionCell.appendChild(deleteButton);
+            row.appendChild(actionCell);
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        showAlert("Failed to connect to the user API.", true);
+    }
+}
+
+
+async function handleCreateUser(event) {
+    event.preventDefault();
+
+    const payload = {
+        name: document.getElementById("user-name").value.trim(),
+        email: document.getElementById("user-email").value.trim(),
+        password: document.getElementById("user-password").value,
+        role: document.getElementById("user-role").value
+    };
+
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/users.php`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if (response.ok) {
+            showAlert(result.message || "User created successfully.");
+            document.getElementById("create-user-form").reset();
+            await fetchUsers();
+        } else {
+            showAlert(result.message || "Failed to create user.", true);
+        }
+
+    } catch (error) {
+        showAlert("Failed to connect to the user API.", true);
+    }
+}
+
+
+async function deleteUser(id) {
+    if (!confirm("Are you sure you want to delete this user?")) {
+        return;
+    }
+
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/users.php?id=${encodeURIComponent(id)}`,
+            { method: "DELETE" }
+        );
+
+        if (response.ok) {
+            showAlert(result.message || "User deleted successfully.");
+            await fetchUsers();
+        } else {
+            showAlert(result.message || "Failed to delete user.", true);
+        }
+
+    } catch (error) {
+        showAlert("Failed to connect to the user API.", true);
+    }
+}
+
+
+// ==================================================
+// ADMINISTRATOR: VENUE MANAGEMENT
+// ==================================================
+
+async function fetchVenues() {
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/venues.php`
+        );
+
+        if (!response.ok || result.status !== "success") {
+            showAlert(result.message || "Failed to fetch venues.", true);
+            return;
+        }
+
+        const tbody = document.querySelector("#venues-table tbody");
+        tbody.innerHTML = "";
+
+        const venues = Array.isArray(result.data)
+            ? result.data
+            : result.data ? [result.data] : [];
+
+        venues.forEach(venue => {
+            const row = document.createElement("tr");
+
+            [
+                venue.venue_id,
+                venue.name,
+                venue.location,
+                venue.capacity,
+                venue.created_at
+            ].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "";
+                row.appendChild(cell);
+            });
+
+            const actionCell = document.createElement("td");
+
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.textContent = "Edit";
+            editButton.className = "edit-btn";
+            editButton.onclick = () => editVenue(venue);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "delete-btn";
+            deleteButton.onclick = () => deleteVenue(venue.venue_id);
+
+            actionCell.appendChild(editButton);
+            actionCell.appendChild(deleteButton);
+            row.appendChild(actionCell);
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        showAlert("Failed to connect to the venue API.", true);
+    }
+}
+
+
+async function handleCreateVenue(event) {
+    event.preventDefault();
+
+    const venueId = document.getElementById("venue-id").value;
+    const name = document.getElementById("venue-name").value.trim();
+    const location = document.getElementById("venue-location").value.trim();
+    const capacity = Number(
+        document.getElementById("venue-capacity").value
+    );
+
+    if (!name || !location || !Number.isInteger(capacity) || capacity < 1) {
+        showAlert("Please enter valid venue details.", true);
+        return;
+    }
+
+    const payload = {
+        name,
+        location,
+        capacity
+    };
+
+    const method = venueId ? "PUT" : "POST";
+
+    if (venueId) {
+        payload.venue_id = Number(venueId);
+    }
+
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/venues.php`,
+            {
+                method,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if (response.ok && result.status === "success") {
+            showAlert(result.message || "Venue saved successfully.");
+            cancelVenueEdit();
+            await fetchVenues();
+        } else {
+            showAlert(result.message || "Failed to save venue.", true);
+        }
+
+    } catch (error) {
+        showAlert("Failed to connect to the venue API.", true);
+    }
+}
+
+
+function editVenue(venue) {
+    document.getElementById("venue-id").value = venue.venue_id;
+    document.getElementById("venue-name").value = venue.name;
+    document.getElementById("venue-location").value = venue.location;
+    document.getElementById("venue-capacity").value = venue.capacity;
+
+    document.getElementById("venue-form-title").textContent = "Edit Venue";
+    document.getElementById("venue-submit-btn").textContent = "Update Venue";
+    document.getElementById("venue-cancel-btn").style.display = "inline-block";
+
+    document.getElementById("create-venue-form").scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+}
+
+
+function cancelVenueEdit() {
+    document.getElementById("create-venue-form").reset();
+    document.getElementById("venue-id").value = "";
+
+    document.getElementById("venue-form-title").textContent = "Add New Venue";
+    document.getElementById("venue-submit-btn").textContent = "Add Venue";
+    document.getElementById("venue-cancel-btn").style.display = "none";
+}
+
+
+async function deleteVenue(id) {
+    if (!confirm("Are you sure you want to delete this venue?")) {
+        return;
+    }
+
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/venues.php?id=${encodeURIComponent(id)}`,
+            { method: "DELETE" }
+        );
+
+        if (response.ok && result.status === "success") {
+            showAlert(result.message || "Venue deleted successfully.");
+
+            if (
+                document.getElementById("venue-id").value === String(id)
+            ) {
+                cancelVenueEdit();
+            }
+
+            await fetchVenues();
+        } else {
+            showAlert(result.message || "Failed to delete venue.", true);
+        }
+
+    } catch (error) {
+        showAlert("Failed to connect to the venue API.", true);
+    }
+}
+
+
+// ==================================================
+// ORGANISER: CREATE AND UPDATE EVENTS
+// ==================================================
+
+function editEvent(eventItem) {
+    document.getElementById("event-id").value = eventItem.event_id;
+    document.getElementById("event-title").value = eventItem.title;
+
+    const dateValue = String(eventItem.event_date || "")
+        .replace(" ", "T");
+
+    document.getElementById("event-date").value = dateValue.slice(0, 16);
+    document.getElementById("event-venue").value = eventItem.venue_id;
+    document.getElementById("event-org").value = eventItem.organiser_id;
+    document.getElementById("event-price").value = eventItem.ticket_price;
+    document.getElementById("event-tickets").value =
+        eventItem.available_tickets;
+
+    document.getElementById("event-form-title").textContent = "Edit Event";
+    document.getElementById("event-submit-btn").textContent = "Update Event";
+    document.getElementById("event-cancel-btn").style.display = "inline-block";
+
+    document.getElementById("create-event-form").scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+}
+
+
+async function handleCreateEvent(event) {
+    event.preventDefault();
+
+    const eventId = document.getElementById("event-id").value;
+
+    const payload = {
+        title: document.getElementById("event-title").value.trim(),
+        event_date: document.getElementById("event-date").value,
+        venue_id: Number(document.getElementById("event-venue").value),
+        organiser_id: Number(document.getElementById("event-org").value),
+        ticket_price: Number(document.getElementById("event-price").value),
+        available_tickets: Number(
+            document.getElementById("event-tickets").value
+        )
+    };
+
+    if (
+        !payload.title ||
+        !payload.event_date ||
+        !Number.isInteger(payload.venue_id) ||
+        payload.venue_id < 1 ||
+        !Number.isInteger(payload.organiser_id) ||
+        payload.organiser_id < 1 ||
+        !Number.isFinite(payload.ticket_price) ||
+        payload.ticket_price < 0 ||
+        !Number.isInteger(payload.available_tickets) ||
+        payload.available_tickets < 0
+    ) {
+        showAlert("Please enter valid event details.", true);
+        return;
+    }
+
+    const method = eventId ? "PUT" : "POST";
+
+    if (eventId) {
+        payload.event_id = Number(eventId);
+    }
+
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/events.php`,
+            {
+                method,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if (
+            response.ok &&
+            result.status !== "fail" &&
+            result.status !== "error"
+        ) {
+            showAlert(
+                result.message ||
+                (eventId
+                    ? "Event updated successfully."
+                    : "Event created successfully.")
+            );
+
+            cancelEventEdit();
+            await fetchEvents("organiser");
+        } else {
+            showAlert(result.message || "Failed to save event.", true);
+        }
+
+    } catch (error) {
+        showAlert("Failed to connect to the event API.", true);
+    }
+}
+
+
+function cancelEventEdit() {
+    document.getElementById("create-event-form").reset();
+    document.getElementById("event-id").value = "";
+
+    document.getElementById("event-form-title").textContent = "Create Event";
+    document.getElementById("event-submit-btn").textContent = "Create Event";
+    document.getElementById("event-cancel-btn").style.display = "none";
+}
+
+
+// ==================================================
+// SHARED: FETCH EVENTS WITH VENUE INFORMATION
+// ==================================================
+
+async function fetchEvents(role) {
+    try {
+        const [eventResponse, venueResponse] = await Promise.all([
+            fetch(`${API_BASE}/events.php`),
+            fetch(`${API_BASE}/venues.php`)
+        ]);
+
+        const eventResult = await eventResponse.json();
+        const venueResult = await venueResponse.json();
+
+        if (!eventResponse.ok) {
+            showAlert(eventResult.message || "Failed to fetch events.", true);
+            return;
+        }
+
+        if (!venueResponse.ok || venueResult.status !== "success") {
+            showAlert(venueResult.message || "Failed to fetch venues.", true);
+            return;
+        }
+
+        const events = Array.isArray(eventResult.data)
+            ? eventResult.data
+            : eventResult.data ? [eventResult.data] : [];
+
+        const venues = Array.isArray(venueResult.data)
+            ? venueResult.data
+            : venueResult.data ? [venueResult.data] : [];
+
+        // Match each event's venue_id with the venue database.
+        const venueMap = new Map(
+            venues.map(venue => [
+                String(venue.venue_id),
+                venue
+            ])
+        );
+
+        const selector = role === "organiser"
+            ? "#org-events-table tbody"
+            : "#cust-events-table tbody";
+
+        const tbody = document.querySelector(selector);
+        tbody.innerHTML = "";
+
+        events.forEach(eventItem => {
+            const venue = venueMap.get(String(eventItem.venue_id));
+
+            const row = document.createElement("tr");
+
+            const values = role === "customer"
+                ? [
+                    eventItem.event_id,
+                    eventItem.title,
+                    eventItem.event_date,
+                    venue ? venue.name : "Venue not found",
+                    venue ? venue.location : "Not available",
+                    `RM ${Number(eventItem.ticket_price).toFixed(2)}`,
+                    eventItem.available_tickets
+                ]
+                : [
+                    eventItem.event_id,
+                    eventItem.title,
+                    eventItem.event_date,
+                    `RM ${Number(eventItem.ticket_price).toFixed(2)}`,
+                    eventItem.available_tickets
+                ];
+
+            values.forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "";
+                row.appendChild(cell);
+            });
+
+            const actionCell = document.createElement("td");
+
+            if (role === "organiser") {
+                const editButton = document.createElement("button");
+                editButton.type = "button";
+                editButton.textContent = "Edit";
+                editButton.className = "edit-btn";
+                editButton.onclick = () => editEvent(eventItem);
+
+                actionCell.appendChild(editButton);
+            } else {
+                const bookButton = document.createElement("button");
+                bookButton.type = "button";
+                bookButton.textContent = "Book Ticket";
+                bookButton.className = "primary-btn";
+                bookButton.onclick = () => bookTicket(eventItem.event_id);
+
+                actionCell.appendChild(bookButton);
+            }
+
+            row.appendChild(actionCell);
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        showAlert(
+            "Failed to connect to the event or venue API.",
+            true
+        );
+    }
+}
+
+
+// ==================================================
+// CUSTOMER: BOOK TICKETS
+// ==================================================
+
+async function bookTicket(eventId) {
+    const qty = prompt("Enter quantity of tickets to book:", "1");
+
+    if (qty === null || qty.trim() === "") {
+        return;
+    }
+
+    const quantity = Number(qty);
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        showAlert("Please enter a valid ticket quantity.", true);
+        return;
+    }
+
+    // Demo customer ID retained from the original code.
+    // Replace this with the logged-in customer's ID when authentication
+    // is implemented.
+    const payload = {
+        customer_id: 4,
+        event_id: eventId,
+        quantity: quantity
+    };
+
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/bookings.php`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if (response.ok) {
+            showAlert(result.message || "Ticket booking successful.");
+            await fetchEvents("customer");
+            await fetchBookings();
+        } else {
+            showAlert(result.message || "Failed to book tickets.", true);
+        }
+
+    } catch (error) {
+        showAlert("Failed to connect to the booking API.", true);
+    }
+}
+
+
+// ==================================================
+// CUSTOMER: VIEW BOOKINGS
+// ==================================================
+
+async function fetchBookings() {
+    try {
+        const { response, result } = await getJSON(
+            `${API_BASE}/bookings.php`
+        );
+
+        if (!response.ok) {
+            showAlert(result.message || "Failed to fetch bookings.", true);
+            return;
+        }
+
+        const tbody = document.querySelector("#cust-bookings-table tbody");
+        tbody.innerHTML = "";
+
+        const bookings = Array.isArray(result.data)
+            ? result.data
+            : result.data ? [result.data] : [];
+
+        bookings.forEach(booking => {
+            const row = document.createElement("tr");
+
+            [
+                booking.booking_id,
+                booking.event_title,
+                booking.quantity,
+                `RM ${Number(booking.total_price).toFixed(2)}`,
+                booking.status
+            ].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value ?? "";
+                row.appendChild(cell);
+            });
+
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+        showAlert("Failed to connect to the booking API.", true);
+    }
+}
+
+
+// ==================================================
+// INITIAL PAGE LOAD
+// ==================================================
+
+fetchUsers();
+fetchVenues();
+
+</script>
+
+</body>
+</html>
